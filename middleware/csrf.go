@@ -115,10 +115,12 @@ func CSRFWithConfig(config CSRFConfig) echo.MiddlewareFunc {
 			k, err := c.Cookie(config.CookieName)
 			token := ""
 
-			if err == nil {
-				token = k.Value()
-			} else {
+			if err != nil {
+				// Generate token
 				token = generateCSRFToken(config.TokenLength)
+			} else {
+				// Reuse token
+				token = k.Value()
 			}
 
 			switch req.Method() {
@@ -193,6 +195,7 @@ func csrfTokenFromQuery(param string) csrfTokenExtractor {
 }
 
 func generateCSRFToken(n uint8) string {
+	// TODO: From utility library
 	chars := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, n)
 	for i := range b {
