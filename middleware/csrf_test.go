@@ -17,7 +17,7 @@ func TestCSRF(t *testing.T) {
 	rec := test.NewResponseRecorder()
 	c := e.NewContext(req, rec)
 	csrf := CSRFWithConfig(CSRFConfig{
-		Secret: []byte("secret"),
+		TokenLength: 16,
 	})
 	h := csrf(func(c echo.Context) error {
 		return c.String(http.StatusOK, "test")
@@ -25,7 +25,7 @@ func TestCSRF(t *testing.T) {
 
 	// No secret
 	assert.Panics(t, func() {
-		CSRF(nil)
+		CSRF()
 	})
 
 	// Generate CSRF token
@@ -46,12 +46,13 @@ func TestCSRF(t *testing.T) {
 	assert.Error(t, h(c))
 
 	// Valid CSRF token
-	salt, _ := generateSalt(8)
-	token := generateCSRFToken([]byte("secret"), salt)
-	req.Header().Set(echo.HeaderCookie, "_csrf="+token)
-	req.Header().Set(echo.HeaderXCSRFToken, token)
-	if assert.NoError(t, h(c)) {
-		assert.Equal(t, http.StatusOK, rec.Status())
+	token, err := generateCSRFToken(16)
+	if assert.NoError(t, err) {
+		req.Header().Set(echo.HeaderCookie, "_csrf="+token)
+		req.Header().Set(echo.HeaderXCSRFToken, token)
+		if assert.NoError(t, h(c)) {
+			assert.Equal(t, http.StatusOK, rec.Status())
+		}
 	}
 }
 
