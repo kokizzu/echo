@@ -23,11 +23,6 @@ func TestCSRF(t *testing.T) {
 		return c.String(http.StatusOK, "test")
 	})
 
-	// No secret
-	assert.Panics(t, func() {
-		CSRF()
-	})
-
 	// Generate CSRF token
 	h(c)
 	assert.Contains(t, rec.Header().Get(echo.HeaderSetCookie), "_csrf")
@@ -46,13 +41,11 @@ func TestCSRF(t *testing.T) {
 	assert.Error(t, h(c))
 
 	// Valid CSRF token
-	token, err := generateCSRFToken(16)
-	if assert.NoError(t, err) {
-		req.Header().Set(echo.HeaderCookie, "_csrf="+token)
-		req.Header().Set(echo.HeaderXCSRFToken, token)
-		if assert.NoError(t, h(c)) {
-			assert.Equal(t, http.StatusOK, rec.Status())
-		}
+	token := generateCSRFToken(16)
+	req.Header().Set(echo.HeaderCookie, "_csrf="+token)
+	req.Header().Set(echo.HeaderXCSRFToken, token)
+	if assert.NoError(t, h(c)) {
+		assert.Equal(t, http.StatusOK, rec.Status())
 	}
 }
 
